@@ -38,7 +38,7 @@ namespace CsvToIisRewriteRules
 
 				using (var parser = new TextFieldParser(csvFilePath))
 				{
-					var redirectMap = new Dictionary<string, List<KeyValuePair<string, string>>>();
+					var redirectMap = new Dictionary<string, Dictionary<string, string>>();
 
 					parser.TextFieldType = FieldType.Delimited;
 					parser.SetDelimiters(",");
@@ -75,7 +75,7 @@ namespace CsvToIisRewriteRules
 
 						foreach (string sourceDomain in redirectMap.Keys)
 						{
-							List<KeyValuePair<string, string>> redirects = redirectMap[sourceDomain];
+							Dictionary<string, string> redirects = redirectMap[sourceDomain];
 							if (redirects.Count > 0)
 							{
 								var rewriteMapElement = new XElement("rewriteMap", new XAttribute("name", $"{sourceDomain} map"));
@@ -133,14 +133,14 @@ namespace CsvToIisRewriteRules
 			}
 		}
 
-		private static void AddToDictionary(ref Dictionary<string, List<KeyValuePair<string, string>>> dictionary, string sourceDomain, string sourcePath, string destinationUrl)
+		private static void AddToDictionary(ref Dictionary<string, Dictionary<string, string>> dictionary, string sourceDomain, string sourcePath, string destinationUrl)
 		{
-			if (!dictionary.TryGetValue(sourceDomain.ToLowerInvariant(), out List<KeyValuePair<string, string>> redirects))
+			if (!dictionary.TryGetValue(sourceDomain.ToLowerInvariant(), out Dictionary<string, string> redirects))
 			{
-				redirects = new List<KeyValuePair<string, string>>();
+				redirects = new Dictionary<string, string>();
 			}
 
-			redirects.Add(new KeyValuePair<string, string>(sourcePath, destinationUrl));
+			redirects[sourcePath] = destinationUrl;
 
 			dictionary[sourceDomain.ToLowerInvariant()] = redirects;
 		}
