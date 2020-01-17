@@ -2,7 +2,7 @@
 This tiny console application takes a simple CSV file and generates a `<rewrite>` XML block that can be inserted into a web.config file on an IIS server that supports the IIS Rewrite module.
 
 ## Usage
-`CsvToIisRewriteRules.exe <csv-file-path> <output-directory> [-s]`
+`CsvToIisRewriteRules.exe -p <csv-file-path> -o <output-directory> [-s] [-a <destination-url>]`
 
 ### Command line parameters
 
@@ -30,3 +30,6 @@ This file contains the `<rules/>` element, containing all the rules which refere
 This file contains references to the `rewriteMaps.config` and `rules.config` files generated above.
 
 > Note: this file is the default file that is generated and will contain all configuration if the `-s` parameter is not specified.
+
+#### Include "Catch-All" Redirect (`-a`)
+If `-a` is specified, the last `rule` definition will catch all URLs that weren't matched and send them to the passed-in `<destination-url>`.
