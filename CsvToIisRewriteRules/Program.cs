@@ -42,7 +42,7 @@ namespace CsvToIisRewriteRules
 				{
 					var rewriteMapsElement = new XElement("rewriteMaps");
 					var rulesElement = new XElement("rules");
-					
+
 					foreach (string sourceDomain in redirectMap.Keys)
 					{
 						Dictionary<string, string> redirects = redirectMap[sourceDomain];
