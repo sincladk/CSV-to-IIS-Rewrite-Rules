@@ -3,6 +3,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
+using System.Linq;
 using System.Text.RegularExpressions;
 using System.Xml.Linq;
 
@@ -78,15 +79,36 @@ namespace CsvToIisRewriteRules
 							Dictionary<string, string> redirects = redirectMap[sourceDomain];
 							if (redirects.Count > 0)
 							{
-								var rewriteMapElement = new XElement("rewriteMap", new XAttribute("name", $"{sourceDomain} map"));
-								foreach (KeyValuePair<string, string> redirect in redirects)
+								XElement ruleElement;
+								if (redirects.Count == 1)
 								{
-									rewriteMapElement.Add(new XElement("add", new XAttribute("key", !string.IsNullOrEmpty(redirect.Key) ? redirect.Key : "/"), new XAttribute("value", redirect.Value)));
+									KeyValuePair<string, string> redirect = redirects.First();
+									string redirectSource = redirect.Key;
+									if (string.IsNullOrEmpty(redirectSource) || redirectSource.Equals("/"))
+									{
+										// If the only redirect for this domain is the root path, put in a broad rule to handle all URL paths on this domain
+										redirectSource = ".*";
+									}
+									else
+									{
+										redirectSource = Regex.Escape(redirectSource.TrimStart('/'));
+									}
+
+									ruleElement = XElement.Parse($"<rule name=\"Redirect rule for {sourceDomain}\" stopProcessing=\"true\"><match url=\"{redirectSource}\" /><conditions><add input=\"{{HTTP_HOST}}\" pattern=\"^{Regex.Escape(sourceDomain)}\" /></conditions><action type=\"Redirect\" url=\"{redirect.Value}\" appendQueryString=\"false\" /></rule>");
+								}
+								else
+								{
+									var rewriteMapElement = new XElement("rewriteMap", new XAttribute("name", $"{sourceDomain} map"));
+									foreach (KeyValuePair<string, string> redirect in redirects)
+									{
+										rewriteMapElement.Add(new XElement("add", new XAttribute("key", !string.IsNullOrEmpty(redirect.Key) ? redirect.Key : "/"), new XAttribute("value", redirect.Value)));
+									}
+
+									rewriteMapsElement.Add(rewriteMapElement);
+
+									ruleElement = XElement.Parse($"<rule name=\"Rewrite map rule for {sourceDomain}\" stopProcessing=\"true\"><match url=\".*\" /><conditions><add input=\"{{HTTP_HOST}}\" pattern=\"^{Regex.Escape(sourceDomain)}\" /><add input=\"{{{sourceDomain} map:{{REQUEST_URI}}}}\" pattern=\"(.+)\" /></conditions><action type=\"Redirect\" url=\"{{C:1}}\" appendQueryString=\"false\" /></rule>");
 								}
 
-								rewriteMapsElement.Add(rewriteMapElement);
-
-								XElement ruleElement = XElement.Parse($"<rule name=\"Rewrite map rule for {sourceDomain}\" stopProcessing=\"true\"><match url=\".*\" /><conditions><add input=\"{{HTTP_HOST}}\" pattern=\"^{Regex.Escape(sourceDomain)}\" /><add input=\"{{{sourceDomain} map:{{REQUEST_URI}}}}\" pattern=\"(.+)\" /></conditions><action type=\"Redirect\" url=\"{{C:1}}\" appendQueryString=\"false\" /></rule>");
 								rulesElement.Add(ruleElement);
 							}
 							else
