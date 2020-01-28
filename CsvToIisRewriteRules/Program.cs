@@ -18,7 +18,7 @@ namespace CsvToIisRewriteRules
 
 			if (string.IsNullOrEmpty(context.CsvPath) || string.IsNullOrEmpty(context.OutputDirectory))
 			{
-				Write("Usage: CsvToIisRewriteRules.exe <csv-file-path> <output-directory> [-s]");
+				Write("CsvToIisRewriteRules.exe -p <csv-file-path> -o <output-directory> [-s] [-a <destination-url>]");
 			}
 			else
 			{
