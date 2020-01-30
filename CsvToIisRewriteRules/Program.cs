@@ -65,7 +65,7 @@ namespace CsvToIisRewriteRules
 								ruleElement = new XElement("rule", new XAttribute("name", $"Redirect rule for {sourceDomain}"), new XAttribute("stopProcessing", "true"),
 									new XElement("match", new XAttribute("url", redirectSource)),
 									new XElement("conditions",
-										new XElement("add", new XAttribute("input", "{HTTP_HOST}"), new XAttribute("pattern", $"^(www\\.)?{Regex.Escape(sourceDomain)}"))
+										new XElement("add", new XAttribute("input", "{HTTP_HOST}"), new XAttribute("pattern", $"^(www\\.)?{Regex.Escape(sourceDomain)}$"))
 										),
 									new XElement("action", new XAttribute("type", "Redirect"), new XAttribute("url", redirect.Value), new XAttribute("appendQueryString", "false"))
 										);
@@ -83,7 +83,7 @@ namespace CsvToIisRewriteRules
 								ruleElement = new XElement("rule", new XAttribute("name", $"Rewrite map rule for {sourceDomain}"), new XAttribute("stopProcessing", "true"),
 								                           new XElement("match", new XAttribute("url", ".*")),
 								                           new XElement("conditions",
-								                                        new XElement("add", new XAttribute("input", "{HTTP_HOST}"), new XAttribute("pattern", $"^(www\\.)?{Regex.Escape(sourceDomain)}")),
+								                                        new XElement("add", new XAttribute("input", "{HTTP_HOST}"), new XAttribute("pattern", $"^(www\\.)?{Regex.Escape(sourceDomain)}$")),
 								                                        new XElement("add", new XAttribute("input", $"{{{sourceDomain} map:{{REQUEST_URI}}}}"), new XAttribute("pattern", "(.+)"))
 								                           ),
 								                           new XElement("action", new XAttribute("type", "Redirect"), new XAttribute("url", "{C:1}"), new XAttribute("appendQueryString", "false"))
