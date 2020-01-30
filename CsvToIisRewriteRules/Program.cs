@@ -62,7 +62,13 @@ namespace CsvToIisRewriteRules
 									redirectSource = Regex.Escape(redirectSource.TrimStart('/'));
 								}
 
-								ruleElement = XElement.Parse($"<rule name=\"Redirect rule for {sourceDomain}\" stopProcessing=\"true\"><match url=\"{redirectSource}\" /><conditions><add input=\"{{HTTP_HOST}}\" pattern=\"^(www\\.)?{Regex.Escape(sourceDomain)}\" /></conditions><action type=\"Redirect\" url=\"{redirect.Value}\" appendQueryString=\"false\" /></rule>");
+								ruleElement = new XElement("rule", new XAttribute("name", $"Redirect rule for {sourceDomain}"), new XAttribute("stopProcessing", "true"),
+									new XElement("match", new XAttribute("url", redirectSource)),
+									new XElement("conditions",
+										new XElement("add", new XAttribute("input", "{HTTP_HOST}"), new XAttribute("pattern", $"^(www\\.)?{Regex.Escape(sourceDomain)}"))
+										),
+									new XElement("action", new XAttribute("type", "Redirect"), new XAttribute("url", redirect.Value), new XAttribute("appendQueryString", "false"))
+										);
 							}
 							else
 							{
@@ -74,7 +80,14 @@ namespace CsvToIisRewriteRules
 
 								rewriteMapsElement.Add(rewriteMapElement);
 
-								ruleElement = XElement.Parse($"<rule name=\"Rewrite map rule for {sourceDomain}\" stopProcessing=\"true\"><match url=\".*\" /><conditions><add input=\"{{HTTP_HOST}}\" pattern=\"^(www\\.)?{Regex.Escape(sourceDomain)}\" /><add input=\"{{{sourceDomain} map:{{REQUEST_URI}}}}\" pattern=\"(.+)\" /></conditions><action type=\"Redirect\" url=\"{{C:1}}\" appendQueryString=\"false\" /></rule>");
+								ruleElement = new XElement("rule", new XAttribute("name", $"Rewrite map rule for {sourceDomain}"), new XAttribute("stopProcessing", "true"),
+								                           new XElement("match", new XAttribute("url", ".*")),
+								                           new XElement("conditions",
+								                                        new XElement("add", new XAttribute("input", "{HTTP_HOST}"), new XAttribute("pattern", $"^(www\\.)?{Regex.Escape(sourceDomain)}")),
+								                                        new XElement("add", new XAttribute("input", $"{{{sourceDomain} map:{{REQUEST_URI}}}}"), new XAttribute("pattern", "(.+)"))
+								                           ),
+								                           new XElement("action", new XAttribute("type", "Redirect"), new XAttribute("url", "{C:1}"), new XAttribute("appendQueryString", "false"))
+								);
 							}
 
 							rulesElement.Add(ruleElement);
