@@ -34,9 +34,8 @@ namespace CsvToIisRewriteRules
 					return;
 				}
 
-				var redirectMap = new Dictionary<string, Dictionary<string, string>>();
-
-				redirectMap = ParseRedirectCsv(context, redirectMap);
+				
+				Dictionary<string, Dictionary<string, string>> redirectMap = ParseRedirectCsv(context);
 
 				if (redirectMap.Count > 0)
 				{
@@ -63,7 +62,7 @@ namespace CsvToIisRewriteRules
 									redirectSource = Regex.Escape(redirectSource.TrimStart('/'));
 								}
 
-								ruleElement = XElement.Parse($"<rule name=\"Redirect rule for {sourceDomain}\" stopProcessing=\"true\"><match url=\"{redirectSource}\" /><conditions><add input=\"{{HTTP_HOST}}\" pattern=\"^{Regex.Escape(sourceDomain)}\" /></conditions><action type=\"Redirect\" url=\"{redirect.Value}\" appendQueryString=\"false\" /></rule>");
+								ruleElement = XElement.Parse($"<rule name=\"Redirect rule for {sourceDomain}\" stopProcessing=\"true\"><match url=\"{redirectSource}\" /><conditions><add input=\"{{HTTP_HOST}}\" pattern=\"^(www\\.)?{Regex.Escape(sourceDomain)}\" /></conditions><action type=\"Redirect\" url=\"{redirect.Value}\" appendQueryString=\"false\" /></rule>");
 							}
 							else
 							{
@@ -75,7 +74,7 @@ namespace CsvToIisRewriteRules
 
 								rewriteMapsElement.Add(rewriteMapElement);
 
-								ruleElement = XElement.Parse($"<rule name=\"Rewrite map rule for {sourceDomain}\" stopProcessing=\"true\"><match url=\".*\" /><conditions><add input=\"{{HTTP_HOST}}\" pattern=\"^{Regex.Escape(sourceDomain)}\" /><add input=\"{{{sourceDomain} map:{{REQUEST_URI}}}}\" pattern=\"(.+)\" /></conditions><action type=\"Redirect\" url=\"{{C:1}}\" appendQueryString=\"false\" /></rule>");
+								ruleElement = XElement.Parse($"<rule name=\"Rewrite map rule for {sourceDomain}\" stopProcessing=\"true\"><match url=\".*\" /><conditions><add input=\"{{HTTP_HOST}}\" pattern=\"^(www\\.)?{Regex.Escape(sourceDomain)}\" /><add input=\"{{{sourceDomain} map:{{REQUEST_URI}}}}\" pattern=\"(.+)\" /></conditions><action type=\"Redirect\" url=\"{{C:1}}\" appendQueryString=\"false\" /></rule>");
 							}
 
 							rulesElement.Add(ruleElement);
@@ -129,8 +128,9 @@ namespace CsvToIisRewriteRules
 			}
 		}
 
-		protected static Dictionary<string, Dictionary<string, string>> ParseRedirectCsv(ExecutionState context, Dictionary<string, Dictionary<string, string>> redirectMap)
+		protected static Dictionary<string, Dictionary<string, string>> ParseRedirectCsv(ExecutionState context)
 		{
+			var redirectMap = new Dictionary<string, Dictionary<string, string>>();
 			using (var parser = new TextFieldParser(context.CsvPath))
 			{
 				parser.TextFieldType = FieldType.Delimited;
@@ -218,14 +218,24 @@ namespace CsvToIisRewriteRules
 
 		private static void AddToDictionary(ref Dictionary<string, Dictionary<string, string>> dictionary, string sourceDomain, string sourcePath, string destinationUrl)
 		{
-			if (!dictionary.TryGetValue(sourceDomain.ToLowerInvariant(), out Dictionary<string, string> redirects))
+			string cleanSourceDomain = CleanSourceDomain(sourceDomain);
+			if (!dictionary.TryGetValue(cleanSourceDomain, out Dictionary<string, string> redirects))
 			{
 				redirects = new Dictionary<string, string>();
 			}
 
 			redirects[sourcePath] = destinationUrl;
 
-			dictionary[sourceDomain.ToLowerInvariant()] = redirects;
+			dictionary[cleanSourceDomain] = redirects;
+		}
+
+		protected static string CleanSourceDomain(string sourceDomain)
+		{
+			if (sourceDomain.StartsWith("www.", StringComparison.OrdinalIgnoreCase) && sourceDomain.Length > 4)
+			{
+				sourceDomain = sourceDomain.Substring(4);
+			}
+			return sourceDomain.ToLowerInvariant();
 		}
 
 		private static void WriteError(string message)
