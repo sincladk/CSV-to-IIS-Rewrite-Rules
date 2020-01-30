@@ -237,7 +237,12 @@ namespace CsvToIisRewriteRules
 				redirects = new Dictionary<string, string>();
 			}
 
-			redirects[sourcePath] = destinationUrl;
+			string cleanSourcePath = sourcePath;
+			if (cleanSourcePath.Contains('?'))
+			{
+				cleanSourcePath = cleanSourcePath.Substring(0, cleanSourcePath.IndexOf('?'));
+			}
+			redirects[cleanSourcePath] = destinationUrl;
 
 			dictionary[cleanSourceDomain] = redirects;
 		}
